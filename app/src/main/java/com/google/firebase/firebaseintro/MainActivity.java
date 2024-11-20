@@ -11,6 +11,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import android.util.Log;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.google.firebase.database.DataSnapshot;
@@ -22,6 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    protected int usersTotal = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,8 +39,13 @@ public class MainActivity extends AppCompatActivity {
         ReadAndWriteSnippets rw = new ReadAndWriteSnippets(FirebaseDatabase.getInstance().getReference());
 
         Button button = findViewById(R.id.button);
-        TextView textView = findViewById(R.id.textView);
-        TextView textView2 = findViewById(R.id.tin);
+
+        EditText input = findViewById(R.id.chatBox);
+        EditText nameInput = findViewById(R.id.nameInput);
+        EditText emailInput = findViewById(R.id.emailInput);
+        EditText username = findViewById(R.id.uNameInput);
+        TextView textView = findViewById(R.id.outputText);
+
 
         rw.getDatabase().child("message").addValueEventListener(new ValueEventListener() {
             @Override
@@ -54,9 +61,28 @@ public class MainActivity extends AppCompatActivity {
         });
 
         button.setOnClickListener(v -> {
-            String value = textView2.getText().toString();
-            rw.getDatabase().child("message").setValue(value);
-            rw.writeNewUser("1", "name", "email");
+            String inputText = input.getText().toString();
+            String uname = username.getText().toString();
+            String name = nameInput.getText().toString();
+            String email = emailInput.getText().toString();
+
+            rw.getDatabase().orderByChild("users").equalTo(uname)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            if (!dataSnapshot.exists()) {
+                                rw.writeNewUser(uname ,name, email);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            System.err.println("Database error: " + databaseError.getMessage());
+                        }
+                    });
+
+            rw.getDatabase().child("messages").child(name).child("content").setValue(inputText);
+
         });
     }
 }
